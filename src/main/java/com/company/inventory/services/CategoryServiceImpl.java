@@ -84,7 +84,7 @@ public class CategoryServiceImpl implements ICategoryService {
             if (categorySaved != null) {
                 list.add(categorySaved);
                 response.getCategoryResponse().setCategory(list);
-                  response.setMetadata("Respuesta ok", "00", "Categoria agregada correctamente");
+                response.setMetadata("Respuesta ok", "00", "Categoria agregada correctamente");
             } else {
                 response.setMetadata("Respuesta no nok", "-1", "Categoria no guardada");
                 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -92,6 +92,47 @@ public class CategoryServiceImpl implements ICategoryService {
 
         } catch (Exception e) {
             response.setMetadata("Respuesta no nok", "-1", "Error al registrar categoria");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    // Actualizar categoria
+    @Override
+    @Transactional
+    public ResponseEntity<CategoryResponseRest> update(Category category, Long id) {
+        CategoryResponseRest response = new CategoryResponseRest();
+        List<Category> list = new ArrayList<>();
+
+        try {
+
+            // se busca el id a actualizar
+            Optional<Category> categorySearch = categoryDao.findById(id);
+            if (categorySearch.isPresent()) {
+                // se procedera a actualizar el registro
+                categorySearch.get().setName(category.getName());
+                categorySearch.get().setDescripcion(category.getDescripcion());
+
+                Category categoryToUpdate = categoryDao.save(categorySearch.get());
+
+                if (categoryToUpdate != null) {
+                    list.add(categoryToUpdate);
+                    response.getCategoryResponse().setCategory(list);
+                    response.setMetadata("Respuesta ok", "00", "Categoria actualizada correctamente");
+                } else {
+                    response.setMetadata("Respuesta no nok", "-1", "Categoria no actualizada");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+
+            } else {
+                response.setMetadata("Respuesta no nok", "-1", "Categoria no encontrada");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no nok", "-1", "Error update categoria");
             e.getStackTrace();
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
