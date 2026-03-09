@@ -39,14 +39,8 @@ public class CategoryRestController {
         return  response;
     }
 
-    //Buscar por name
-    @GetMapping("/categories/search")
-    public ResponseEntity <CategoryResponseRest> searchByName(@RequestParam  String name){
-        return service.searchByName(name);
-    }
-
     @PostMapping("/categories")
-    public ResponseEntity <CategoryResponseRest> save(@RequestBody Category category){
+    public  ResponseEntity <CategoryResponseRest> save(@RequestBody Category category){
         ResponseEntity<CategoryResponseRest> response = service.save(category);
         return  response;
     }
@@ -61,6 +55,12 @@ public class CategoryRestController {
     public  ResponseEntity <CategoryResponseRest> delete(@PathVariable Long id){
         ResponseEntity<CategoryResponseRest> response = service.deleteById(id);
         return  response;
+    }
+
+     //Buscar por name
+    @GetMapping("/categories/search")
+    public ResponseEntity <CategoryResponseRest> searchByName(@RequestParam  String name){
+        return service.searchByName(name);
     }
     
 }

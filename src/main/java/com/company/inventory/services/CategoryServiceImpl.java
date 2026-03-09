@@ -14,6 +14,7 @@ import com.company.inventory.dao.ICategoryDao;
 import com.company.inventory.model.Category;
 import com.company.inventory.response.CategoryResponseRest;
 
+
 @Service
 public class CategoryServiceImpl implements ICategoryService {
 
@@ -107,7 +108,6 @@ public class CategoryServiceImpl implements ICategoryService {
         List<Category> list = new ArrayList<>();
 
         try {
-
             // se busca el id a actualizar
             Optional<Category> categorySearch = categoryDao.findById(id);
             if (categorySearch.isPresent()) {
@@ -153,8 +153,8 @@ public class CategoryServiceImpl implements ICategoryService {
             if (categorySearch.isPresent()) {
                 categoryDao.deleteById(id);
                 response.setMetadata("repuesta ok", "00", "Registro Eliminado");
-            } else {
-                response.setMetadata("Respuesta no nok", "-1", "Categoria no existe");
+            }else{
+                 response.setMetadata("Respuesta no nok", "-1", "Categoria no existe");
                 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
             }
 
