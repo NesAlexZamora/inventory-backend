@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.company.inventory.model.Category;
@@ -54,6 +55,12 @@ public class CategoryRestController {
     public  ResponseEntity <CategoryResponseRest> delete(@PathVariable Long id){
         ResponseEntity<CategoryResponseRest> response = service.deleteById(id);
         return  response;
+    }
+
+     //Buscar por name
+    @GetMapping("/categories/search")
+    public ResponseEntity <CategoryResponseRest> searchByName(@RequestParam  String name){
+        return service.searchByName(name);
     }
     
 }

@@ -167,4 +167,27 @@ public class CategoryServiceImpl implements ICategoryService {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    //Buscar por name
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<CategoryResponseRest> searchByName(String name) {
+        CategoryResponseRest response = new CategoryResponseRest();
+        try {
+            List<Category> category = categoryDao.findByNameContainingIgnoreCase(name);
+            if (!category.isEmpty()) {
+                response.getCategoryResponse().setCategory(category);
+                response.setMetadata("Respuesta ok", "00", "Categorias encontradas");
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Categoria no encontrada");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al consultar por nombre");
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }
