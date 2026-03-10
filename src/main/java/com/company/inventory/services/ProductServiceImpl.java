@@ -136,16 +136,52 @@ public class ProductServiceImpl implements IProductService {
                 // delete producto by id
                 productDao.deleteById(id);
                 response.setMetadata("Respuesta ok", "00", "Producto Eliminado");
-            }else {
+            } else {
                 response.setMetadata("Respuesta no ok", "-1", "Producto no existe");
                 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
             }
-            
 
         } catch (Exception e) {
             response.setMetadata("Respuesta no ok", "-1", "Error al eliminar producto");
             e.getStackTrace();
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<ProductResponseRest> search() {
+
+        ProductResponseRest response = new ProductResponseRest();
+        List<Product> list = new ArrayList<>();
+
+        try {
+            // Buscar todos los productos
+            List<Product> products = (List<Product>) productDao.findAll();
+
+            if (!products.isEmpty()) {
+
+                products.forEach(p -> {
+                    byte[] imageDescompressed = Util.decompressZLib(p.getPicture());
+                    p.setPicture(imageDescompressed);
+                    list.add(p);
+                });
+                response.getProductResponse().setProducts(list);
+                response.setMetadata("Respuesta ok", "00", "Productos encontrados");
+
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "No hay productos");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+
+            }
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al buscar productos");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+
         }
 
         return new ResponseEntity<>(response, HttpStatus.OK);

@@ -94,4 +94,10 @@ public class ProductController {
         return  response;
     }
 
+    @GetMapping("/products")
+    public  ResponseEntity <ProductResponseRest> searchByName(){
+        ResponseEntity<ProductResponseRest> response = productService.search();
+        return  response;
+    }
+
 }
