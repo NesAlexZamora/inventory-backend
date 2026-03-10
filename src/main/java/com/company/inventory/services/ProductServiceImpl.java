@@ -99,30 +99,51 @@ public class ProductServiceImpl implements IProductService {
     @Transactional(readOnly = true)
     public ResponseEntity<ProductResponseRest> searchByName(String name) {
         ProductResponseRest response = new ProductResponseRest();
-        List<Product> list = new ArrayList<>();
-        List<Product> listAuxx = new ArrayList<>();
 
         try {
-            // search producto by name
-            listAuxx = productDao.findByNameContainingIgnoreCase(name);
+            // Buscar productos por nombre
+            List<Product> products = productDao.findByNameContainingIgnoreCase(name);
 
-            if (!listAuxx.isEmpty()) {
-                listAuxx.stream().forEach((p) -> {
+            if (!products.isEmpty()) {
+                for (Product p : products) {
                     byte[] imageDescompressed = Util.decompressZLib(p.getPicture());
                     p.setPicture(imageDescompressed);
-                    list.add(p);
-                });
-
-                response.getProductResponse().setProducts(list);
-                response.setMetadata("Respuesta ok", "00", "Productoss encontrado");
-
+                }
+                response.getProductResponse().setProducts(products);
+                response.setMetadata("Respuesta ok", "00", "Productos encontrados");
             } else {
-                response.setMetadata("Respuesta no ok", "-1", "Productos no encontrados ");
+                response.setMetadata("Respuesta no ok", "-1", "Productos no encontrados");
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
             }
 
         } catch (Exception e) {
             response.setMetadata("Respuesta no ok", "-1", "Error al buscar producto por nombre");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ProductResponseRest> deleteById(Long id) {
+        ProductResponseRest response = new ProductResponseRest();
+        try {
+            Optional<Product> producSearch = productDao.findById(id);
+            if (producSearch.isPresent()) {
+                // delete producto by id
+                productDao.deleteById(id);
+                response.setMetadata("Respuesta ok", "00", "Producto Eliminado");
+            }else {
+                response.setMetadata("Respuesta no ok", "-1", "Producto no existe");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+            
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al eliminar producto");
             e.getStackTrace();
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
