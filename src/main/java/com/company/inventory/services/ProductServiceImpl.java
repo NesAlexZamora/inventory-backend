@@ -1,0 +1,241 @@
+package com.company.inventory.services;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.company.inventory.dao.ICategoryDao;
+import com.company.inventory.dao.IProductDao;
+import com.company.inventory.model.Category;
+import com.company.inventory.model.Product;
+import com.company.inventory.response.ProductResponseRest;
+import com.company.inventory.util.Util;
+
+@Service
+public class ProductServiceImpl implements IProductService {
+
+    @Autowired
+    private ICategoryDao categoryDao;
+    @Autowired
+    private IProductDao productDao;
+
+    // PARA GUARDAR
+    @Override
+    @Transactional
+    public ResponseEntity<ProductResponseRest> save(Product product, Long categoryId) {
+        ProductResponseRest response = new ProductResponseRest();
+
+        List<Product> list = new ArrayList<>();
+        try {
+            // buscaremos la categoria para setiarla al producto
+            Optional<Category> category = categoryDao.findById(categoryId);
+
+            if (category.isPresent()) {
+                product.setCategory(category.get());
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Categoria no encontrada asociada al producto");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+            // SAVE THE PRODUCT
+            Product productSaved = productDao.save(product);
+            if (productSaved != null) {
+                list.add(productSaved);
+                response.getProductResponse().setProducts(list);
+                response.setMetadata("Respuesta ok", "00", "Producto guardado");
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Categoria no encontrada");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al guardar producto");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    // Buscar por ID
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<ProductResponseRest> searchById(Long id) {
+        ProductResponseRest response = new ProductResponseRest();
+        List<Product> list = new ArrayList<>();
+
+        try {
+            // search producto by id
+            Optional<Product> product = productDao.findById(id);
+
+            if (product.isPresent()) {
+
+                byte[] imageDescompressed = Util.decompressZLib(product.get().getPicture());
+                product.get().setPicture(imageDescompressed);
+                list.add(product.get());
+                response.getProductResponse().setProducts(list);
+                response.setMetadata("Respuesta ok", "00", "Producto encontrado");
+
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Producto no encontrado");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al buscar producto");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<ProductResponseRest> searchByName(String name) {
+        ProductResponseRest response = new ProductResponseRest();
+
+        try {
+            // Buscar productos por nombre
+            List<Product> products = productDao.findByNameContainingIgnoreCase(name);
+
+            if (!products.isEmpty()) {
+                for (Product p : products) {
+                    byte[] imageDescompressed = Util.decompressZLib(p.getPicture());
+                    p.setPicture(imageDescompressed);
+                }
+                response.getProductResponse().setProducts(products);
+                response.setMetadata("Respuesta ok", "00", "Productos encontrados");
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Productos no encontrados");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al buscar producto por nombre");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ProductResponseRest> deleteById(Long id) {
+        ProductResponseRest response = new ProductResponseRest();
+        try {
+            Optional<Product> producSearch = productDao.findById(id);
+            if (producSearch.isPresent()) {
+                // delete producto by id
+                productDao.deleteById(id);
+                response.setMetadata("Respuesta ok", "00", "Producto Eliminado");
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Producto no existe");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al eliminar producto");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseEntity<ProductResponseRest> search() {
+
+        ProductResponseRest response = new ProductResponseRest();
+        List<Product> list = new ArrayList<>();
+
+        try {
+            // Buscar todos los productos
+            List<Product> products = (List<Product>) productDao.findAll();
+
+            if (!products.isEmpty()) {
+
+                products.forEach(p -> {
+                    byte[] imageDescompressed = Util.decompressZLib(p.getPicture());
+                    p.setPicture(imageDescompressed);
+                    list.add(p);
+                });
+                response.getProductResponse().setProducts(list);
+                response.setMetadata("Respuesta ok", "00", "Productos encontrados");
+
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "No hay productos");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+
+            }
+
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al buscar productos");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ProductResponseRest> update(Product product, Long categoryId, Long id) {
+        ProductResponseRest response = new ProductResponseRest();
+
+        List<Product> list = new ArrayList<>();
+        try {
+            // buscaremos la categoria para setiarla al producto
+            Optional<Category> category = categoryDao.findById(categoryId);
+
+            if (category.isPresent()) {
+                product.setCategory(category.get());
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Categoria no encontrada asociada al producto");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+            // SEARCH PRODUCT TO UPDATE
+            Optional<Product> productSearch = productDao.findById(id);
+            if (productSearch.isPresent()) {
+                // se actualiza el producto
+                productSearch.get().setAccount(product.getAccount());
+                productSearch.get().setCategory(product.getCategory());
+                productSearch.get().setName(product.getName());
+                productSearch.get().setPicture(product.getPicture());
+                productSearch.get().setPrice(product.getPrice());
+
+                // se guarda prodcut en la BD
+                Product productToUpdate = productDao.save(productSearch.get());
+                if (productToUpdate != null) {
+                    list.add(productToUpdate);
+                    response.getProductResponse().setProducts(list);
+                    response.setMetadata("Respuesta ok", "00", "Producto Actualizado");
+                } else {
+                    response.setMetadata("Respuesta no ok", "-1", "Producto no actualizada");
+                    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+                }
+
+            } else {
+                response.setMetadata("Respuesta no ok", "-1", "Producto no actualizada");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            response.setMetadata("Respuesta no ok", "-1", "Error al actualizar el producto");
+            e.getStackTrace();
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+}
